@@ -6,27 +6,47 @@
 //
 
 import SwiftUI
-import SwiftData
 
 @main
 struct RecallApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        // Menu bar extra for settings & quit
+        MenuBarExtra {
+            MenuBarContentView()
+        } label: {
+            Image(systemName: "clipboard.fill")
         }
-        .modelContainer(sharedModelContainer)
+        .menuBarExtraStyle(.menu)
+
+        // No WindowGroup — this is a menu bar / notch-only app
+        Settings {
+            EmptyView()
+        }
     }
+}
+
+// MARK: - Menu Bar Content
+
+struct MenuBarContentView: View {
+    var body: some View {
+        Button("Show Recall (⌘⇧V)") {
+            NotificationCenter.default.post(name: .toggleRecallPanel, object: nil)
+        }
+        .keyboardShortcut("V", modifiers: [.command, .shift])
+
+        Divider()
+
+        Button("Quit Recall") {
+            NSApplication.shared.terminate(nil)
+        }
+        .keyboardShortcut("Q", modifiers: .command)
+    }
+}
+
+// MARK: - Notifications
+
+extension Notification.Name {
+    static let toggleRecallPanel = Notification.Name("toggleRecallPanel")
 }
