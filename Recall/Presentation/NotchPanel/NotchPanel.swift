@@ -2,7 +2,8 @@
 //  NotchPanel.swift
 //  Recall
 //
-//  Custom NSPanel subclass for the floating notch UI.
+//  Custom NSPanel subclass for the notch overlay.
+//  Always floats above everything, borderless, transparent.
 //
 
 import AppKit
@@ -18,23 +19,22 @@ final class NotchPanel: NSPanel {
             defer: false
         )
 
-        // Panel behavior
-        self.level = .statusBar
-        self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+        // Float above everything (including menu bar)
+        self.level = .screenSaver
+        self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         self.isMovableByWindowBackground = false
         self.backgroundColor = .clear
         self.isOpaque = false
-        self.hasShadow = true
+        self.hasShadow = false
         self.hidesOnDeactivate = false
-
-        // Allow the panel to become key for keyboard input (search, navigation)
-        self.becomesKeyOnlyIfNeeded = false
+        self.becomesKeyOnlyIfNeeded = true
         self.worksWhenModal = true
+        self.ignoresMouseEvents = false
+
+        // Allow mouse tracking through the panel
+        self.acceptsMouseMovedEvents = true
     }
 
-    // Allow the panel to become key window for keyboard events
     override var canBecomeKey: Bool { true }
-
-    // Never become main window — we're a utility panel
     override var canBecomeMain: Bool { false }
 }

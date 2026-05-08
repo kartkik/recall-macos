@@ -2,61 +2,28 @@
 //  NotchShape.swift
 //  Recall
 //
-//  Custom shape mimicking the MacBook notch geometry.
+//  Exact MacBook notch silhouette with camera cutout.
 //
 
 import SwiftUI
 
 struct NotchShape: Shape {
-    /// Controls the notch curve radius. Animatable.
-    var notchRadius: CGFloat = 12
-
-    var animatableData: CGFloat {
-        get { notchRadius }
-        set { notchRadius = newValue }
-    }
-
     func path(in rect: CGRect) -> Path {
-        var path = Path()
-
-        let cornerRadius: CGFloat = notchRadius
-        let topInset: CGFloat = 0
-
-        // Start from top-left with rounded corner
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY + cornerRadius + topInset))
-        path.addQuadCurve(
-            to: CGPoint(x: rect.minX + cornerRadius, y: rect.minY + topInset),
-            control: CGPoint(x: rect.minX, y: rect.minY + topInset)
-        )
-
-        // Top edge
-        path.addLine(to: CGPoint(x: rect.maxX - cornerRadius, y: rect.minY + topInset))
-
-        // Top-right corner
-        path.addQuadCurve(
-            to: CGPoint(x: rect.maxX, y: rect.minY + cornerRadius + topInset),
-            control: CGPoint(x: rect.maxX, y: rect.minY + topInset)
-        )
-
-        // Right edge
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - cornerRadius))
-
-        // Bottom-right corner
-        path.addQuadCurve(
-            to: CGPoint(x: rect.maxX - cornerRadius, y: rect.maxY),
-            control: CGPoint(x: rect.maxX, y: rect.maxY)
-        )
-
-        // Bottom edge
-        path.addLine(to: CGPoint(x: rect.minX + cornerRadius, y: rect.maxY))
-
-        // Bottom-left corner
-        path.addQuadCurve(
-            to: CGPoint(x: rect.minX, y: rect.maxY - cornerRadius),
-            control: CGPoint(x: rect.minX, y: rect.maxY)
-        )
-
-        path.closeSubpath()
-        return path
-    }
+          var path = Path()
+          let width = rect.size.width
+          let height = rect.size.height
+          path.move(to: CGPoint(x: 0, y: 0))
+          path.addLine(to: CGPoint(x: 0.99801*width, y: 0))
+          path.addLine(to: CGPoint(x: 0.93476*width, y: 0))
+          path.addCurve(to: CGPoint(x: 0.91367*width, y: 0.14962*height), control1: CGPoint(x: 0.92311*width, y: 0), control2: CGPoint(x: 0.91367*width, y: 0.06699*height))
+          path.addLine(to: CGPoint(x: 0.91367*width, y: 0.74811*height))
+          path.addCurve(to: CGPoint(x: 0.87853*width, y: 0.99747*height), control1: CGPoint(x: 0.91367*width, y: 0.88583*height), control2: CGPoint(x: 0.89794*width, y: 0.99747*height))
+          path.addLine(to: CGPoint(x: 0.12651*width, y: 0.99747*height))
+          path.addCurve(to: CGPoint(x: 0.08434*width, y: 0.69823*height), control1: CGPoint(x: 0.10322*width, y: 0.99747*height), control2: CGPoint(x: 0.08434*width, y: 0.8635*height))
+          path.addLine(to: CGPoint(x: 0.08434*width, y: 0.14962*height))
+          path.addCurve(to: CGPoint(x: 0.06325*width, y: 0), control1: CGPoint(x: 0.08434*width, y: 0.06699*height), control2: CGPoint(x: 0.0749*width, y: 0))
+          path.addLine(to: CGPoint(x: 0, y: 0))
+          path.closeSubpath()
+          return path
+      }
 }

@@ -18,18 +18,28 @@ final class DependencyContainer {
 
     let pasteboardService: PasteboardServiceProtocol
     let clipboardMonitor: ClipboardMonitor
+    let apiKeyStore: APIKeyStoreProtocol
+
+    // MARK: - AI Services
+
+    private let openAIService: OpenAIService
+    private let anthropicService: AnthropicService
 
     // MARK: - Repository
 
     let clipboardRepository: ClipboardRepositoryProtocol
 
-    // MARK: - Use Cases
+    // MARK: - Clipboard Use Cases
 
     let getClipboardHistoryUseCase: GetClipboardHistoryUseCase
     let saveClipboardItemUseCase: SaveClipboardItemUseCase
     let deleteClipboardItemUseCase: DeleteClipboardItemUseCase
     let searchClipboardUseCase: SearchClipboardUseCase
     let pasteClipboardItemUseCase: PasteClipboardItemUseCase
+
+    // MARK: - Chat Use Cases
+
+    let sendChatMessageUseCase: SendChatMessageUseCase
 
     // MARK: - Init
 
@@ -47,19 +57,33 @@ final class DependencyContainer {
         // Services
         pasteboardService = PasteboardService()
         clipboardMonitor = ClipboardMonitor(pasteboardService: pasteboardService)
+        apiKeyStore = APIKeyStore()
+
+        // AI Services
+        openAIService = OpenAIService()
+        anthropicService = AnthropicService()
 
         // Repository
         clipboardRepository = ClipboardRepository(modelContext: modelContext)
 
-        // Use Cases
+        // Clipboard Use Cases
         getClipboardHistoryUseCase = GetClipboardHistoryUseCase(repository: clipboardRepository)
         saveClipboardItemUseCase = SaveClipboardItemUseCase(repository: clipboardRepository)
         deleteClipboardItemUseCase = DeleteClipboardItemUseCase(repository: clipboardRepository)
         searchClipboardUseCase = SearchClipboardUseCase(repository: clipboardRepository)
         pasteClipboardItemUseCase = PasteClipboardItemUseCase(pasteboardService: pasteboardService)
+
+        // Chat Use Cases
+        sendChatMessageUseCase = SendChatMessageUseCase(
+            services: [
+                .chatGPT: openAIService,
+                .claude: anthropicService
+            ],
+            apiKeyStore: apiKeyStore
+        )
     }
 
-    // MARK: - Factory
+    // MARK: - Factories
 
     func makeClipboardViewModel() -> ClipboardViewModel {
         ClipboardViewModel(
@@ -70,6 +94,13 @@ final class DependencyContainer {
             pasteItemUseCase: pasteClipboardItemUseCase,
             repository: clipboardRepository,
             clipboardMonitor: clipboardMonitor
+        )
+    }
+
+    func makeChatViewModel() -> ChatViewModel {
+        ChatViewModel(
+            sendMessageUseCase: sendChatMessageUseCase,
+            pasteboardService: pasteboardService
         )
     }
 }

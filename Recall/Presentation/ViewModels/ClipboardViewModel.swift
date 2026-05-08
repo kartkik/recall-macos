@@ -5,6 +5,7 @@
 //  Main ViewModel coordinating clipboard operations.
 //
 
+import AppKit
 import Combine
 import Foundation
 import SwiftUI
@@ -74,8 +75,18 @@ final class ClipboardViewModel {
     func selectItem(_ item: ClipboardItem) {
         // Set ignore flag so the monitor doesn't re-capture this
         clipboardMonitor.ignoreNextChange = true
+
+        // 1. Copy item content to the system pasteboard
         pasteItemUseCase.execute(item)
+
+        // 2. Hide the panel
         onPanelShouldHide?()
+
+        // 3. After a brief delay (to let panel hide and focus return to previous app),
+        //    simulate ⌘V to paste into the active application
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            Self.simulatePaste()
+        }
     }
 
     func deleteItem(_ item: ClipboardItem) {
@@ -129,5 +140,21 @@ final class ClipboardViewModel {
                 self.loadItems()
             }
             .store(in: &cancellables)
+    }
+
+    /// Simulates a ⌘V key press using CGEvent to paste into the frontmost app.
+    private static func simulatePaste() {
+        let source = CGEventSource(stateID: .combinedSessionState)
+
+        // Key down: ⌘V (keyCode 9 = 'V')
+        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: true)
+        keyDown?.flags = CGEventFlags.maskCommand
+
+        // Key up: ⌘V
+        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: false)
+        keyUp?.flags = CGEventFlags.maskCommand
+
+        keyDown?.post(tap: .cgSessionEventTap)
+        keyUp?.post(tap: .cgSessionEventTap)
     }
 }
