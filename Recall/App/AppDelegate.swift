@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var container: DependencyContainer!
     private var clipboardViewModel: ClipboardViewModel!
     private var chatViewModel: ChatViewModel!
+    private var mediaPlayerViewModel: MediaPlayerViewModel!
     private var globalKeyMonitor: Any?
     private var localKeyMonitor: Any?
     private var notificationObserver: Any?
@@ -25,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         container = DependencyContainer()
         clipboardViewModel = container.makeClipboardViewModel()
         chatViewModel = container.makeChatViewModel()
+        mediaPlayerViewModel = container.makeMediaPlayerViewModel()
 
         // Setup panel controller
         panelController = NotchPanelController()
@@ -33,6 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let contentView = NotchContentView(
             clipboardViewModel: clipboardViewModel,
             chatViewModel: chatViewModel,
+//            mediaViewModel: mediaPlayerViewModel,
             apiKeyStore: container.apiKeyStore,
             expansionState: panelController.expansionState
         )
@@ -58,12 +61,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.togglePanel()
         }
 
-        // Start monitoring clipboard
+        // Start monitoring clipboard + media
         container.clipboardMonitor.start()
+        mediaPlayerViewModel.startMonitoring()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         container.clipboardMonitor.stop()
+        mediaPlayerViewModel.stopMonitoring()
 
         if let monitor = globalKeyMonitor {
             NSEvent.removeMonitor(monitor)

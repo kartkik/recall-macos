@@ -19,6 +19,7 @@ final class DependencyContainer {
     let pasteboardService: PasteboardServiceProtocol
     let clipboardMonitor: ClipboardMonitor
     let apiKeyStore: APIKeyStoreProtocol
+    let mediaRemoteService: MediaRemoteService
 
     // MARK: - AI Services
 
@@ -58,6 +59,7 @@ final class DependencyContainer {
         pasteboardService = PasteboardService()
         clipboardMonitor = ClipboardMonitor(pasteboardService: pasteboardService)
         apiKeyStore = APIKeyStore()
+        mediaRemoteService = MediaRemoteService()
 
         // AI Services
         openAIService = OpenAIService()
@@ -102,5 +104,9 @@ final class DependencyContainer {
             sendMessageUseCase: sendChatMessageUseCase,
             pasteboardService: pasteboardService
         )
+    }
+
+    func makeMediaPlayerViewModel() -> MediaPlayerViewModel {
+        MediaPlayerViewModel(mediaService: mediaRemoteService)
     }
 }
