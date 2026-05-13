@@ -2,40 +2,65 @@
 //  MediaPlayerViewModel.swift
 //  Recall
 //
-//  ViewModel for now-playing media detection and controls.
-//
 
 import AppKit
 import Foundation
 import SwiftUI
 
 @Observable
+@MainActor
 final class MediaPlayerViewModel {
-    // MARK: - State
+
+    // MARK: - Published State
 
     var nowPlaying: NowPlayingInfo = .empty
     var hasMedia: Bool = false
 
+    /// Current detected player
+    var currentPlayer: MediaPlayer?
+
+    /// Helpful for debugging / UI
+    var currentPlayerName: String {
+        currentPlayer?.appName ?? "No Media"
+    }
+
     // MARK: - Dependencies
 
     private let mediaService: MediaRemoteService
+    private let workspace: NSWorkspace
+
+    // MARK: - Timer
+
     private var pollTimer: Timer?
 
     // MARK: - Init
 
-    init(mediaService: MediaRemoteService) {
+    init(
+        mediaService: MediaRemoteService,
+        workspace: NSWorkspace = .shared
+    ) {
         self.mediaService = mediaService
+        self.workspace = workspace
     }
 
     // MARK: - Lifecycle
 
     func startMonitoring() {
-        // Poll every 1 second for now-playing updates
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.refresh()
-        }
-        // Immediate first fetch
+
+        stopMonitoring()
+
+        // Immediate fetch
         refresh()
+
+        // Poll every second
+        pollTimer = Timer.scheduledTimer(
+            withTimeInterval: 1.0,
+            repeats: true
+        ) { [weak self] _ in
+
+            guard let self else { return }
+            self.refresh()
+        }
     }
 
     func stopMonitoring() {
@@ -43,37 +68,72 @@ final class MediaPlayerViewModel {
         pollTimer = nil
     }
 
-    // MARK: - Actions
+    deinit {
+//        pollTimer?.invalidate()
+    }
+
+    // MARK: - Playback Controls
 
     func togglePlayPause() {
+
+        guard hasMedia else { return }
+
         mediaService.togglePlayPause()
-        // Refresh after a brief delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
-            self?.refresh()
-        }
+
+        refreshAfterDelay(0.2)
     }
 
     func nextTrack() {
+
+        guard hasMedia else { return }
+
         mediaService.nextTrack()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            self?.refresh()
-        }
+
+        refreshAfterDelay(0.3)
     }
 
     func previousTrack() {
+
+        guard hasMedia else { return }
+
         mediaService.previousTrack()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            self?.refresh()
+
+        refreshAfterDelay(0.3)
+    }
+
+    // MARK: - Refresh
+
+    private func refresh() {
+
+        // Detect current player
+        currentPlayer = MediaPlayer.detect(using: workspace)
+
+        mediaService.fetchNowPlaying { [weak self] info in
+
+            guard let self else { return }
+
+            self.nowPlaying = info
+            self.hasMedia = !info.title.isEmpty
+
+            // Helpful logs
+            if self.hasMedia {
+                print(
+                    "[Recall] Now Playing: \(info.title) " +
+                    "(\(self.currentPlayerName))"
+                )
+            }
         }
     }
 
-    // MARK: - Private
+    // MARK: - Helpers
 
-    private func refresh() {
-        mediaService.fetchNowPlaying { [weak self] info in
-            guard let self else { return }
-            self.nowPlaying = info
-            self.hasMedia = !info.title.isEmpty
+    private func refreshAfterDelay(_ delay: Double) {
+
+        DispatchQueue.main.asyncAfter(
+            deadline: .now() + delay
+        ) { [weak self] in
+
+            self?.refresh()
         }
     }
 }

@@ -35,7 +35,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let contentView = NotchContentView(
             clipboardViewModel: clipboardViewModel,
             chatViewModel: chatViewModel,
-//            mediaViewModel: mediaPlayerViewModel,
+            mediaViewModel: mediaPlayerViewModel,
             apiKeyStore: container.apiKeyStore,
             expansionState: panelController.expansionState
         )

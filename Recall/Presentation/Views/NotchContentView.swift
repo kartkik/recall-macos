@@ -25,6 +25,7 @@ enum RecallTab: String, CaseIterable {
 struct NotchContentView: View {
     var clipboardViewModel: ClipboardViewModel
     var chatViewModel: ChatViewModel
+    var mediaViewModel: MediaPlayerViewModel
     var apiKeyStore: APIKeyStoreProtocol
     var expansionState: NotchExpansionState
 
@@ -82,25 +83,61 @@ struct NotchContentView: View {
     // MARK: - Collapsed View (Notch Pill)
 
     private var collapsedView: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.39, green: 0.40, blue: 0.95),
-                            Color(red: 0.55, green: 0.36, blue: 0.96)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 8, height: 8)
+        HStack(spacing: 8) {
+            if mediaViewModel.hasMedia {
+                // Media Pill Content
+                HStack(spacing: 6) {
+                    if let artwork = mediaViewModel.nowPlaying.artwork {
+                        Image(nsImage: artwork)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 18, height: 18)
+                            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    } else {
+                        Image(systemName: "music.note")
+                            .font(.system(size: 9))
+                            .foregroundStyle(.white.opacity(0.5))
+                            .frame(width: 18, height: 18)
+                            .background(RoundedRectangle(cornerRadius: 4).fill(.white.opacity(0.1)))
+                    }
 
-            Text("Recall")
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-                .foregroundStyle(.white.opacity(isHovered ? 0.9 : 0.6))
+                    VStack(alignment: .leading, spacing: -1) {
+                        Text(mediaViewModel.nowPlaying.title)
+                            .font(.system(size: 9, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.9))
+                            .lineLimit(1)
+                        Text(mediaViewModel.nowPlaying.artist)
+                            .font(.system(size: 7, weight: .medium, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.4))
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: 80, alignment: .leading)
 
-            if !clipboardViewModel.clipboardItems.isEmpty {
+                    NowPlayingIndicator(isPlaying: mediaViewModel.nowPlaying.isPlaying)
+                }
+            } else {
+                // Default Recall Pill
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.39, green: 0.40, blue: 0.95),
+                                    Color(red: 0.55, green: 0.36, blue: 0.96)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 8, height: 8)
+
+                    Text("Recall")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white.opacity(isHovered ? 0.9 : 0.6))
+                }
+            }
+
+            if !clipboardViewModel.clipboardItems.isEmpty && !mediaViewModel.hasMedia {
                 Text("·  \(clipboardViewModel.clipboardItems.count)")
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white.opacity(isHovered ? 0.5 : 0.3))
@@ -115,6 +152,12 @@ struct NotchContentView: View {
         VStack(spacing: 0) {
             // Top bar with tabs + controls
             topBar
+
+            if mediaViewModel.hasMedia {
+                MediaPlayerView(viewModel: mediaViewModel)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 4)
+            }
 
             Divider()
                 .overlay(.white.opacity(0.06))
