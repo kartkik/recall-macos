@@ -13,17 +13,23 @@ struct NowPlayingInfo: Equatable {
     let artist: String
     let album: String
     let duration: TimeInterval
-    var elapsedTime: TimeInterval
+    let elapsedTime: TimeInterval
     let artwork: NSImage?
     let isPlaying: Bool
     let appBundleID: String?
+    let timestamp: Date
 
     var progress: Double {
         guard duration > 0 else { return 0 }
-        return min(elapsedTime / duration, 1.0)
+        return min(currentElapsedTime / duration, 1.0)
     }
 
-    var formattedElapsed: String { formatTime(elapsedTime) }
+    var currentElapsedTime: TimeInterval {
+        guard isPlaying else { return elapsedTime }
+        return elapsedTime + Date().timeIntervalSince(timestamp)
+    }
+
+    var formattedElapsed: String { formatTime(currentElapsedTime) }
     var formattedDuration: String { formatTime(duration) }
 
     private func formatTime(_ time: TimeInterval) -> String {
@@ -35,6 +41,7 @@ struct NowPlayingInfo: Equatable {
     static let empty = NowPlayingInfo(
         title: "", artist: "", album: "",
         duration: 0, elapsedTime: 0,
-        artwork: nil, isPlaying: false, appBundleID: nil
+        artwork: nil, isPlaying: false, 
+        appBundleID: nil, timestamp: .distantPast
     )
 }

@@ -4,7 +4,7 @@
 <dict>
 	<key>LSUIElement</key>
 	<true/>
-    <key>NSAppleEventsUsageDescription</key>
-    <string>Recall needs automation access to read media playback information.</string>
+<!--    <key>NSAppleEventsUsageDescription</key>-->
+<!--    <string>Recall needs automation access to read media playback information.</string>-->
 </dict>
 </plist>

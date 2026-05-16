@@ -127,25 +127,26 @@ import AppKit
     // MARK: - Detect Running Player
 
     static func detect(using workspace: NSWorkspace) -> MediaPlayer? {
+        let running = workspace.runningApplications
+            .compactMap { app -> (MediaPlayer, NSRunningApplication)? in
+                guard let bundleID = app.bundleIdentifier,
+                      let player = allCases.first(where: { $0.bundleID == bundleID })
+                else { return nil }
+                return (player, app)
+            }
 
-        let running = Set(
-            workspace.runningApplications
-                .compactMap { $0.bundleIdentifier }
-        )
-
-        // Prefer dedicated media apps first
-        if running.contains(MediaPlayer.music.bundleID) {
-            return .music
+        // 1. Prefer frontmost app if it's a media player
+        if let frontmost = workspace.frontmostApplication?.bundleIdentifier,
+           let player = allCases.first(where: { $0.bundleID == frontmost }) {
+            return player
         }
 
-        if running.contains(MediaPlayer.spotify.bundleID) {
-            return .spotify
-        }
+        // 2. Prefer dedicated players (Music/Spotify) if they are running
+        if let music = running.first(where: { $0.0 == .music }) { return .music }
+        if let spotify = running.first(where: { $0.0 == .spotify }) { return .spotify }
 
-        // Then browsers
-        return allCases.first {
-            $0.isBrowser && running.contains($0.bundleID)
-        }
+        // 3. Any running browser
+        return running.first(where: { $0.0.isBrowser })?.0
     }
 
     // MARK: - Bundle Identifier
@@ -253,14 +254,14 @@ final class MediaRemoteService: @unchecked Sendable {
 
     func fetchNowPlaying(completion: @escaping (NowPlayingInfo) -> Void) {
         guard let player = MediaPlayer.detect(using: workspace) else {
-            print("[Recall] No supported media player is running.")
             completion(.empty)
             return
         }
 
-        DispatchQueue.global(qos: .userInitiated).async {
+        // AppleScript MUST be called on main thread for reliability
+        Task { @MainActor in
             let info = self.queryNowPlaying(for: player)
-            DispatchQueue.main.async { completion(info) }
+            completion(info)
         }
     }
 
@@ -272,9 +273,15 @@ final class MediaRemoteService: @unchecked Sendable {
                 tell application "Music"
                     if it is running and player state is not stopped then
                         set t to current track
+                        set artData to missing value
+                        try
+                            if exists artwork 1 of t then
+                                set artData to raw data of artwork 1 of t
+                            end if
+                        end try
                         return {name of t, artist of t, album of t, \
                                 duration of t, player position, \
-                                (player state is playing)}
+                                (player state is playing), artData}
                     end if
                 end tell
                 """,
@@ -283,14 +290,13 @@ final class MediaRemoteService: @unchecked Sendable {
             )
 
         case .spotify:
-            // Spotify reports duration in milliseconds.
             return runScript("""
                 tell application "Spotify"
                     if it is running and player state is not stopped then
                         set t to current track
                         return {name of t, artist of t, album of t, \
                                 (duration of t / 1000), player position, \
-                                (player state is playing)}
+                                (player state is playing), artwork url of t}
                     end if
                 end tell
                 """,
@@ -380,11 +386,25 @@ final class MediaRemoteService: @unchecked Sendable {
             let duration  = desc.atIndex(4)?.doubleValue  ?? 0
             let elapsed   = desc.atIndex(5)?.doubleValue  ?? 0
             let isPlaying = (desc.atIndex(6)?.booleanValue ?? false)
-            print("[Recall] \(title) — \(artist) | playing=\(isPlaying)")
+            
+            var artwork: NSImage? = nil
+            if desc.numberOfItems >= 7, let artDesc = desc.atIndex(7) {
+                // Check for 'tiff' (0x74696666) or 'TIFF' (0x54494646) descriptor types
+                if artDesc.descriptorType == 0x74696666 || artDesc.descriptorType == 0x54494646 {
+                    let data = artDesc.data
+                    if !data.isEmpty {
+                        artwork = NSImage(data: data)
+                    }
+                }
+                // Spotify artwork URL fetching should be handled asynchronously
+                // outside of this parser to avoid blocking the main thread.
+            }
+
             return NowPlayingInfo(
                 title: title, artist: artist, album: album,
                 duration: duration, elapsedTime: elapsed,
-                artwork: nil, isPlaying: isPlaying, appBundleID: bundleID
+                artwork: artwork, isPlaying: isPlaying, 
+                appBundleID: bundleID, timestamp: Date()
             )
         }
     }
@@ -403,7 +423,8 @@ final class MediaRemoteService: @unchecked Sendable {
             return NowPlayingInfo(
                 title: cleaned, artist: appName, album: "Web Media",
                 duration: 0, elapsedTime: 0,
-                artwork: nil, isPlaying: true, appBundleID: bundleID
+                artwork: nil, isPlaying: true, 
+                appBundleID: bundleID, timestamp: Date()
             )
         }
     }
@@ -413,40 +434,58 @@ final class MediaRemoteService: @unchecked Sendable {
     //  Each control targets whichever player is currently active so the
     //  command always reaches the right app.
 
-    func togglePlayPause() { sendCommand(music: "playpause", spotify: "playpause") }
-    func nextTrack()       { sendCommand(music: "next track", spotify: "next track") }
-    func previousTrack()   { sendCommand(music: "previous track", spotify: "previous track") }
-    func play()            { sendCommand(music: "play", spotify: "play") }
-    func pause()           { sendCommand(music: "pause", spotify: "pause") }
+    func togglePlayPause() { sendCommand(music: "playpause", spotify: "playpause", mediaKey: 16) }
+    func nextTrack()       { sendCommand(music: "next track", spotify: "next track", mediaKey: 17) }
+    func previousTrack()   { sendCommand(music: "previous track", spotify: "previous track", mediaKey: 18) }
+    func play()            { sendCommand(music: "play", spotify: "play", mediaKey: 16) }
+    func pause()           { sendCommand(music: "pause", spotify: "pause", mediaKey: 16) }
 
     /// Send a command to whichever supported player is running.
-    private func sendCommand(music musicCmd: String, spotify spotifyCmd: String) {
+    private func sendCommand(music musicCmd: String, spotify spotifyCmd: String, mediaKey: Int32) {
         guard let player = MediaPlayer.detect(using: workspace) else { return }
 
-        let source: String
-        switch player {
-        case .music:
-            source = "tell application \"Music\" to \(musicCmd)"
-        case .spotify:
-            source = "tell application \"Spotify\" to \(spotifyCmd)"
-        default:
-            // Browsers don't expose playback control via AppleScript.
+        // For browsers, use media keys directly
+        if player.isBrowser {
+            sendMediaKey(key: mediaKey)
             return
         }
 
+        let source: String
+        switch player {
+        case .music:   source = "tell application \"Music\" to \(musicCmd)"
+        case .spotify: source = "tell application \"Spotify\" to \(spotifyCmd)"
+        default:       return
+        }
+
         let bundleID = player.bundleID
-        DispatchQueue.global(qos: .userInitiated).async {
-            guard AutomationPermission.request(for: bundleID) else {
-                print("[Recall] sendCommand blocked — no permission for \(bundleID)")
-                return
-            }
+        Task { @MainActor in
+            guard AutomationPermission.request(for: bundleID) else { return }
             var err: NSDictionary?
             NSAppleScript(source: source)?.executeAndReturnError(&err)
-            if let e = err {
-                print("[Recall] Control script error: \(e)")
-                let code = e[NSAppleScript.errorNumber] as? Int ?? 0
-                if code == -1743 { AutomationPermission.resetCache(for: bundleID) }
-            }
         }
+    }
+
+    /// Simulate a physical media key press
+    private func sendMediaKey(key: Int32) {
+        func postEvent(type: Int, data: Int) {
+            let event = NSEvent.otherEvent(with: .systemDefined,
+                                         location: .zero,
+                                         modifierFlags: NSEvent.ModifierFlags(rawValue: UInt(data << 16) | (type == 0xa ? 0xa00 : 0xb00)),
+                                         timestamp: 0,
+                                         windowNumber: 0,
+                                         context: nil,
+                                         subtype: 8,
+                                         data1: data,
+                                         data2: -1)
+            event?.cgEvent?.post(tap: .cghidEventTap)
+        }
+        
+        // Key down
+        let dataDown = Int((key << 16) | 0xa00)
+        postEvent(type: 0xa, data: dataDown)
+        
+        // Key up
+        let dataUp = Int((key << 16) | 0xb00)
+        postEvent(type: 0xb, data: dataUp)
     }
 }

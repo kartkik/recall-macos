@@ -29,9 +29,10 @@ final class MediaPlayerViewModel {
     private let mediaService: MediaRemoteService
     private let workspace: NSWorkspace
 
-    // MARK: - Timer
+    // MARK: - Timers
 
     private var pollTimer: Timer?
+    private var uiTimer: Timer?
 
     // MARK: - Init
 
@@ -46,30 +47,49 @@ final class MediaPlayerViewModel {
     // MARK: - Lifecycle
 
     func startMonitoring() {
-
         stopMonitoring()
 
         // Immediate fetch
         refresh()
 
-        // Poll every second
-        pollTimer = Timer.scheduledTimer(
-            withTimeInterval: 1.0,
-            repeats: true
-        ) { [weak self] _ in
+        // Poll system every 2 seconds (AppleScript is slow, so we don't want to over-poll)
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.refresh()
+            }
+        }
 
-            guard let self else { return }
-            self.refresh()
+        // Update UI every 0.1s for smooth progress bar
+        uiTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            // No-op refresh to trigger SwiftUI observation if needed, 
+            // but we'll use a dummy state to be sure.
+            Task { @MainActor in
+                self?.objectWillChange()
+            }
         }
     }
 
     func stopMonitoring() {
         pollTimer?.invalidate()
+        uiTimer?.invalidate()
         pollTimer = nil
+        uiTimer = nil
     }
 
-    deinit {
-//        pollTimer?.invalidate()
+    var lastUIUpdate: Date = Date()
+
+    private func objectWillChange() {
+        lastUIUpdate = Date()
+    }
+    
+    var smoothProgress: Double {
+        _ = lastUIUpdate
+        return nowPlaying.progress
+    }
+
+    var smoothElapsed: String {
+        _ = lastUIUpdate
+        return nowPlaying.formattedElapsed
     }
 
     // MARK: - Playback Controls

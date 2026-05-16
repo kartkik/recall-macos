@@ -44,14 +44,14 @@ struct MediaPlayerView: View {
                                     endPoint: .trailing
                                 )
                             )
-                            .frame(width: geo.size.width * viewModel.nowPlaying.progress)
+                            .frame(width: geo.size.width * viewModel.smoothProgress)
                     }
                 }
                 .frame(height: 3)
 
                 // Time
                 HStack {
-                    Text(viewModel.nowPlaying.formattedElapsed)
+                    Text(viewModel.smoothElapsed)
                         .font(.system(size: 7, weight: .medium, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.3))
                     Spacer()
