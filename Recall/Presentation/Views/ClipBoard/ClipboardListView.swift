@@ -32,7 +32,7 @@ struct ClipboardListView: View {
                                 isSelected: selectedIndex == absoluteIndex,
                                 onSelect: { onSelect(item) },
                                 onDelete: { onDelete(item) },
-                                onTogglePin: { onTogglePin(item) }
+                                onCopied: { onTogglePin(item) }
                             )
                             .id(item.id)
                         }
@@ -51,7 +51,7 @@ struct ClipboardListView: View {
                                 isSelected: selectedIndex == absoluteIndex,
                                 onSelect: { onSelect(item) },
                                 onDelete: { onDelete(item) },
-                                onTogglePin: { onTogglePin(item) }
+                                onCopied: { onTogglePin(item) }
                             )
                             .id(item.id)
                         }

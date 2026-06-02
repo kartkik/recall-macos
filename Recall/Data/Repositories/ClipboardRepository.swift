@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import AppKit
 
 final class ClipboardRepository: ClipboardRepositoryProtocol, @unchecked Sendable {
     private let modelContext: ModelContext
@@ -105,6 +106,13 @@ final class ClipboardRepository: ClipboardRepositoryProtocol, @unchecked Sendabl
             model.isPinned.toggle()
             saveContext()
         }
+    }
+    
+    func copyItem(_ item : ClipboardItem){
+        
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(item.content, forType: .string)
     }
 
     func clearAll() {

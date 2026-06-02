@@ -9,7 +9,7 @@ struct NotchSidePanel: View {
     var clipboardViewModel: ClipboardViewModel
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 4) {
             infoCard(
                 icon: "clipboard.fill",
                 label: "CLIPBOARD",
@@ -39,7 +39,7 @@ struct NotchSidePanel: View {
     }
 
     private func infoCard(icon: String, label: String, value: String, color: Color) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 4,) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(color.opacity(0.2))
@@ -48,7 +48,7 @@ struct NotchSidePanel: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(color)
             }
-            .frame(width: 28, height: 28)
+            .frame(width: 20, height: 20)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(label)
@@ -61,10 +61,10 @@ struct NotchSidePanel: View {
                     .foregroundStyle(.white.opacity(0.85))
             }
 
-            Spacer()
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .frame(width: 100, alignment: .leading)
+        .padding(.horizontal, 5)
+        .padding(.vertical, 3)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(.white.opacity(0.04))

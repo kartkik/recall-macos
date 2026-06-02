@@ -54,7 +54,7 @@ final class MediaPlayerViewModel {
 
         // Poll system every 2 seconds (AppleScript is slow, so we don't want to over-poll)
         pollTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 self?.refresh()
             }
         }
@@ -63,7 +63,7 @@ final class MediaPlayerViewModel {
         uiTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             // No-op refresh to trigger SwiftUI observation if needed, 
             // but we'll use a dummy state to be sure.
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 self?.objectWillChange()
             }
         }

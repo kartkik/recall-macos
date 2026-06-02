@@ -13,6 +13,7 @@ struct NotchContentView: View {
     var clipboardViewModel: ClipboardViewModel
     var chatViewModel: ChatViewModel
     var mediaViewModel: MediaPlayerViewModel
+    var todoViewModel: TodoViewModel
     var apiKeyStore: APIKeyStoreProtocol
     var expansionState: NotchExpansionState
 
@@ -39,47 +40,27 @@ struct NotchContentView: View {
                 let w = geo.size.width
                 let h = geo.size.height
 
-                let leftInset = w * 0.085
-                let rightInset = w * 0.087
+                // Insets keep content within the straight edges of the NotchShape.
+                // The shape's left/right walls are at ~8.4%/91.4% of width,
+                // and the bottom corners curve inward starting at ~70-75% of height.
+                let leftInset = w * 0.09
+                let rightInset = w * 0.09
 
-                let topInset = isExpanded ? h * 0.01 : h * 0.15
-                let bottomInset = isExpanded ? h * 0.005 : h * 0.05
+                let topInset = isExpanded ? h * 0.03 : h * 0.15
+                let bottomInset = isExpanded ? h * 0.08 : h * 0.05
 
                 Group {
 
                     if isExpanded {
 
-                        VStack(spacing: 0) {
-
-                            // FIXED TOP BAR
-                            NotchTopBar(
-                                selectedTab: $selectedTab,
-                                clipboardViewModel: clipboardViewModel,
-                                chatViewModel: chatViewModel,
-                                apiKeyStore: apiKeyStore
-                            )
-
-                            Divider()
-                                .overlay(.white.opacity(0.08))
-
-                            // TAB CONTENT
-                            Group {
-
-                                switch selectedTab {
-
-                                case .clipboard:
-ClipboardView(viewModel: clipboardViewModel)
-                                    
-                                case .chat:
-
-                                    ChatView(
-                                        viewModel: chatViewModel,
-                                        apiKeyStore: apiKeyStore
-                                    )
-                                }
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
+                        ExpandedNotchView(
+                            selectedTab: $selectedTab,
+                            clipboardViewModel: clipboardViewModel,
+                            chatViewModel: chatViewModel,
+                            mediaViewModel: mediaViewModel,
+                            todoViewModel: todoViewModel,
+                            apiKeyStore: apiKeyStore
+                        )
 
                     } else {
 
@@ -95,6 +76,7 @@ ClipboardView(viewModel: clipboardViewModel)
                     width: w - leftInset - rightInset,
                     height: h - topInset - bottomInset
                 )
+                .clipped()
                 .offset(
                     x: leftInset,
                     y: topInset
@@ -113,6 +95,7 @@ ClipboardView(viewModel: clipboardViewModel)
             }
             .allowsHitTesting(false)
         }
+        .clipShape(NotchShape())
         .onHover { hovering in
             isHovered = hovering
         }

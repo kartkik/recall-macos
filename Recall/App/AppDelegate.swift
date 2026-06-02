@@ -28,6 +28,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         chatViewModel = container.makeChatViewModel()
         mediaPlayerViewModel = container.makeMediaPlayerViewModel()
 
+        let todoViewModel = container.makeTodoViewModel()
+
         // Setup panel controller
         panelController = NotchPanelController()
 
@@ -36,6 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             clipboardViewModel: clipboardViewModel,
             chatViewModel: chatViewModel,
             mediaViewModel: mediaPlayerViewModel,
+            todoViewModel: todoViewModel,
             apiKeyStore: container.apiKeyStore,
             expansionState: panelController.expansionState
         )

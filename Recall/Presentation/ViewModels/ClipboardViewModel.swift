@@ -98,11 +98,16 @@ final class ClipboardViewModel {
         repository.togglePin(item)
         loadItems()
     }
+    
+    func copyItem(_ item : ClipboardItem){
+        repository.copyItem(item)
+    }
 
     func clearAll() {
         repository.clearAll()
         loadItems()
     }
+    
 
     // MARK: - Keyboard Navigation
 

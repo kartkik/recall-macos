@@ -11,7 +11,7 @@ struct EmptyStateView: View {
     let isSearching: Bool
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 0) {
             Image(systemName: isSearching ? "magnifyingglass" : "clipboard")
                 .font(.system(size: 32, weight: .light))
                 .foregroundStyle(

@@ -13,7 +13,7 @@ struct ClipboardItemRow: View {
     let isSelected: Bool
     var onSelect: () -> Void
     var onDelete: () -> Void
-    var onTogglePin: () -> Void
+    var onCopied: () -> Void
 
     @State private var isHovered = false
 
@@ -122,8 +122,8 @@ struct ClipboardItemRow: View {
     private var actionButtons: some View {
         HStack(spacing: 4) {
             // Pin button
-            Button(action: onTogglePin) {
-                Image(systemName: item.isPinned ? "pin.fill" : "pin")
+            Button(action: onCopied) {
+                Image(systemName:  "doc.on.doc")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(item.isPinned ? .yellow : .white.opacity(0.5))
             }

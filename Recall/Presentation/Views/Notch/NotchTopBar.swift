@@ -29,17 +29,21 @@ struct NotchTopBar: View {
 
             Spacer()
 
-            // Controls
+            // Controls — fixed width so different tab controls don't shift layout
             HStack(spacing: 6) {
                 if selectedTab == .clipboard {
                     clipboardControls
                 } else if selectedTab == .chat {
                     chatControls
+                } else if selectedTab == .calender {
+                    calendarControls
                 }
             }
+            .frame(minWidth: 60, alignment: .trailing)
         }
         .padding(.horizontal, 6)
-        .padding(.top, 12) // Clears hardware notch
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        .padding(.bottom, 4)
         .sheet(isPresented: $showSettings) {
             APIKeySettingsView(apiKeyStore: apiKeyStore)
         }
@@ -79,14 +83,27 @@ struct NotchTopBar: View {
     }
 
     private var clipboardControls: some View {
-        Button(action: { clipboardViewModel.clearAll() }) {
-            Image(systemName: "trash")
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(.white.opacity(0.35))
-                .frame(width: 26, height: 26)
-                .background(Circle().fill(.white.opacity(0.06)))
+        
+        HStack{
+            
+            
+            Button(action: { clipboardViewModel.clearAll() }) {
+                Image(systemName: "trash")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.35))
+                    .frame(width: 26, height: 26)
+                    .background(Circle().fill(.white.opacity(0.06)))
+            }
+
+            Button(action: { showSettings = true }) {
+                Image(systemName: "key.fill")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.35))
+                    .frame(width: 26, height: 26)
+            }
         }
-        .buttonStyle(.plain)
+        
+       
     }
 
     private var chatControls: some View {
@@ -107,9 +124,37 @@ struct NotchTopBar: View {
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.white.opacity(0.35))
                     .frame(width: 26, height: 26)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var calendarControls: some View {
+        
+        HStack{
+            
+            
+            Button(action: { /* Jump to today */ }) {
+                Text("Today")
+                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.35))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(.white.opacity(0.06))
+                    )
+            }
+            
+            Button(action: { showSettings = true }) {
+                Image(systemName: "key.fill")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.35))
+                    .frame(width: 26, height: 26)
                     .background(Circle().fill(.white.opacity(0.06)))
             }
             .buttonStyle(.plain)
+
         }
     }
 
@@ -117,9 +162,7 @@ struct NotchTopBar: View {
         let isSelected = selectedTab == tab
 
         return Button(action: {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                selectedTab = tab
-            }
+            selectedTab = tab
         }) {
             Image(systemName: tab.icon)
                 .font(.system(size: 12, weight: .medium))

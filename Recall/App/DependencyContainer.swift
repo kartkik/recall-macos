@@ -41,6 +41,17 @@ final class DependencyContainer {
     // MARK: - Chat Use Cases
 
     let sendChatMessageUseCase: SendChatMessageUseCase
+    
+    
+    // MARK: - TodoUseCase
+    
+    let eventKitService: EventKitService
+    let eventKitRepository: EventKitRepositoryProtocol
+    let requestEventKitAccessUseCase: RequestEventKitAccessUseCase
+    let fetchReminderEventsUseCase: FetchReminderEventsUseCase
+    let createReminderEventUseCase: CreateReminderEventUseCase
+    let toggleReminderCompletionUseCase: ToggleReminderCompletionUseCase
+    let deleteReminderEventUseCase: DeleteReminderEventUseCase
 
     // MARK: - Init
 
@@ -83,6 +94,16 @@ final class DependencyContainer {
             ],
             apiKeyStore: apiKeyStore
         )
+        
+        
+        
+        eventKitService = EventKitService()
+        eventKitRepository = EventKitRepository(service: eventKitService)
+        requestEventKitAccessUseCase = RequestEventKitAccessUseCase(repository: eventKitRepository)
+        fetchReminderEventsUseCase = FetchReminderEventsUseCase(repository: eventKitRepository)
+        createReminderEventUseCase = CreateReminderEventUseCase(repository: eventKitRepository)
+        toggleReminderCompletionUseCase = ToggleReminderCompletionUseCase(repository: eventKitRepository)
+        deleteReminderEventUseCase = DeleteReminderEventUseCase(repository: eventKitRepository)
     }
 
     // MARK: - Factories
@@ -108,5 +129,17 @@ final class DependencyContainer {
 
     func makeMediaPlayerViewModel() -> MediaPlayerViewModel {
         MediaPlayerViewModel(mediaService: mediaRemoteService)
+    }
+    
+    
+    func makeTodoViewModel() -> TodoViewModel {
+        TodoViewModel(
+            requestAccessUseCase: requestEventKitAccessUseCase,
+            fetchReminderEventsUseCase: fetchReminderEventsUseCase,
+            createReminderEventUseCase: createReminderEventUseCase,
+            toggleReminderCompletionUseCase: toggleReminderCompletionUseCase,
+            deleteReminderEventUseCase: deleteReminderEventUseCase,
+            repository: eventKitRepository
+        )
     }
 }

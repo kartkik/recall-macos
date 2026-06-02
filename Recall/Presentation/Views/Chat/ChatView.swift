@@ -39,8 +39,7 @@ struct ChatView: View {
             // Input
             chatInputBar
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 150) // FIXED HEIGHT
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.opacity(0.001))
         .clipped()
         .sheet(isPresented: $showSettings) {
@@ -51,7 +50,7 @@ struct ChatView: View {
     // MARK: - Header
 
     private var chatHeader: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 0) {
 
             ForEach(AIProvider.allCases) { provider in
                 providerButton(provider)
@@ -158,7 +157,7 @@ struct ChatView: View {
                 }
                 .padding(.vertical, 4)
             }
-            .frame(maxHeight: 60) // IMPORTANT FIX
+            .frame(maxHeight: .infinity)
             .onChange(of: viewModel.messages.count) { _, _ in
 
                 if let lastMessage = viewModel.messages.last {

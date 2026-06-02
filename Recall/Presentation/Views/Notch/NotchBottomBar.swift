@@ -14,6 +14,11 @@ struct NotchBottomBar: View {
                 keyboardHint("↑↓", label: "Navigate")
                 keyboardHint("⏎", label: "Paste")
                 keyboardHint("⎋", label: "Close")
+            } else if selectedTab == .calender {
+                keyboardHint("←→", label: "Days")
+                keyboardHint("⎋", label: "Close")
+            } else {
+                keyboardHint("⎋", label: "Close")
             }
 
             Spacer()

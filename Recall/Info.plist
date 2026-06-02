@@ -6,5 +6,12 @@
 	<true/>
 <!--    <key>NSAppleEventsUsageDescription</key>-->
 <!--    <string>Recall needs automation access to read media playback information.</string>-->
+
+
+<key>NSCalendarsUsageDescription</key>
+<string>Recall needs access to your Calendar to sync and show events.</string>
+<key>NSRemindersUsageDescription</key>
+<string>Recall needs access to your Reminders to display and manage your tasks.</string>
+
 </dict>
 </plist>

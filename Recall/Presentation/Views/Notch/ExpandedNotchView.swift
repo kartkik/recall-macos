@@ -10,51 +10,68 @@ struct ExpandedNotchView: View {
     var clipboardViewModel: ClipboardViewModel
     var chatViewModel: ChatViewModel
     var mediaViewModel: MediaPlayerViewModel
+    var todoViewModel: TodoViewModel
     var apiKeyStore: APIKeyStoreProtocol
-    
+
+    // Fixed pixel heights for pinned bars
+    private let topBarHeight: CGFloat = 48
+
     var body: some View {
-        VStack(spacing: 0) {
-            // 1. Fixed Top Bar
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+            let contentTop = topBarHeight + 1     // below top bar + divider
+            let contentHeight = h - contentTop
+
+            // ── Content — renders first (bottom z-layer) ──
+            contentForSelectedTab
+                .frame(width: w, height: max(contentHeight, 0))
+                .clipped()
+                .position(x: w / 2, y: contentTop + max(contentHeight, 0) / 2)
+                .padding()
+
+            // ── Divider — middle z-layer ──
+            Divider()
+                .overlay(.white.opacity(0.06))
+                .frame(width: w)
+                .position(x: w / 2, y: topBarHeight)
+
+            // ── Top Bar — renders last (top z-layer, always clickable) ──
             NotchTopBar(
                 selectedTab: $selectedTab,
                 clipboardViewModel: clipboardViewModel,
                 chatViewModel: chatViewModel,
                 apiKeyStore: apiKeyStore
             )
-
-            Divider()
-                .overlay(.white.opacity(0.06))
-                .padding(.top, 4)
-
-            // 2. Main Content Area (switches between views)
-            HStack(spacing: 0) {
-                mainContent
-                    .frame(maxWidth: .infinity)
-
-                // Side info panel
-                if selectedTab == .clipboard && !clipboardViewModel.clipboardItems.isEmpty {
-                    Divider()
-                        .overlay(.white.opacity(0.06))
-
-                    NotchSidePanel(clipboardViewModel: clipboardViewModel)
-                        .frame(width: 170)
-                }
-            }
-            .frame(maxHeight: .infinity)
-
-            // 3. Bottom Bar
-            NotchBottomBar(selectedTab: selectedTab)
+            .frame(width: w, height: topBarHeight)
+            .position(x: w / 2, y: topBarHeight / 2)
         }
     }
 
+    // MARK: - Tab Content
+
     @ViewBuilder
-    private var mainContent: some View {
+    private var contentForSelectedTab: some View {
         switch selectedTab {
         case .clipboard:
-            ClipboardView(viewModel: clipboardViewModel)
+            HStack(spacing: 0) {
+                ClipboardView(viewModel: clipboardViewModel)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                if !clipboardViewModel.clipboardItems.isEmpty {
+                    Divider()
+                        .overlay(.white.opacity(0.06))
+                    
+
+                    NotchSidePanel(clipboardViewModel: clipboardViewModel)
+                        .frame(width: 160)
+                        
+                }
+            }
         case .chat:
             ChatView(viewModel: chatViewModel, apiKeyStore: apiKeyStore)
-                .padding(.horizontal, 6)
+        case .calender:
+            TodoView(viewModel: todoViewModel)
         }
     }
 }

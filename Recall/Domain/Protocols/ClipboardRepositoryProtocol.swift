@@ -22,10 +22,14 @@ protocol ClipboardRepositoryProtocol: Sendable {
 
     /// Toggles the pinned state of an item.
     func togglePin(_ item: ClipboardItem)
+    
+    func copyItem(_ item: ClipboardItem)
+
 
     /// Clears all clipboard history (excluding pinned items).
     func clearAll()
 
+    
     /// Returns the total count of items in the store.
     func count() -> Int
 
